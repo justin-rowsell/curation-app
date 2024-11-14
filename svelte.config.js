@@ -1,17 +1,55 @@
-import adapter from '@sveltejs/adapter-auto';
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import azure from 'svelte-adapter-azure-swa';
+import { vitePreprocess } from '@sveltejs/kit/vite';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	// Consult https://svelte.dev/docs/kit/integrations
+	// Consult https://kit.svelte.dev/docs/integrations#preprocessors
 	// for more information about preprocessors
 	preprocess: vitePreprocess(),
 
 	kit: {
-		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
-		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
-		adapter: adapter()
+		adapter: azure({
+			customStaticWebAppConfig: {
+				routes: [
+					{
+						"route": "/login",
+						"rewrite": "/.auth/login/aad?post_login_redirect_uri=/events",
+						"allowedRoles": ["anonymous", "authenticated"]
+					},
+					{
+						"route": "/.auth/login/github",
+						"statusCode": 404
+					},
+					{
+						"route": "/.auth/login/twitter",
+						"statusCode": 404
+					},
+					{
+						"route": "/logout",
+						"redirect": "/.auth/logout",
+						"allowedRoles": ["anonymous", "authenticated"]
+					},
+					{
+						"route": "/events/*",
+						"allowedRoles": ["authenticated"]
+					},
+					{
+						"route": "/customers/*",
+						"allowedRoles": ["authenticated"]
+					},
+					{
+						"route": "/admin/*",
+						"allowedRoles": ["authenticated"]
+					}
+				],
+				responseOverrides: {
+					'401': {
+						'redirect': '/login',
+						'statusCode': 302
+					}
+				}
+			}
+		})
 	}
 };
 
