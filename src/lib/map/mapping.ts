@@ -177,17 +177,18 @@ export async function init(container: HTMLDivElement, tableContainer: HTMLDivEle
           };
           await prodLayer.applyEdits(edits)
 
-          await stagingLayer.applyEdits({
-            deleteFeatures: selectedFeatures.features.map((feature: __esri.Graphic) => {
-              return {
-                objectId: feature.attributes.__OBJECTID
-              };
-            })
-          });
+      //     // TODO - uncommented until the layers are set up correctly
+      //     await stagingLayer.applyEdits({
+      //       deleteFeatures: selectedFeatures.features.map((feature: __esri.Graphic) => {
+      //         return {
+      //           objectId: feature.attributes.__OBJECTID
+      //         };
+      //       })
+      //     });
 
-          featureTable.highlightIds.removeAll();
-          features = [];
-          alert("Selected submissions have been promoted.");
+      //     featureTable.highlightIds.removeAll();
+      //     features = [];
+      //     alert("Selected submissions have been promoted.");
         }
       });
     }
