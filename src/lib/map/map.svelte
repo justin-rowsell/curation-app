@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import Toast from '$lib/util/toast.svelte';
-	import type { Unsubscriber } from 'svelte/motion';
 
 	let toast: Toast;
 

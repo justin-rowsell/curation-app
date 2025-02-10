@@ -52,7 +52,7 @@ export async function init(container: HTMLDivElement, tableContainer: HTMLDivEle
   }
 
   const map = new Map({
-    basemap: 'arcgis-light-gray',
+    basemap: 'arcgis-light-gray'
   });
 
   const polygonGraphicsLayer = new GraphicsLayer();
@@ -74,7 +74,9 @@ export async function init(container: HTMLDivElement, tableContainer: HTMLDivEle
 
   const view = new MapView({
     map,
-    container
+    container,
+    center: [-98.5795, 39.8283], // Center of the continental US
+    zoom: 4 // Zoom level to show most of the US
   });
 
   featureTable = new FeaturTable({
