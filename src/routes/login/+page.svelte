@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import { pbLogin, getUserMuseums } from "$lib/db/pocketbase";
-    import { museumStore } from "$lib/stores/museum";
+	import { pbLogin, getUserMuseum } from "$lib/db/pocketbase";
+    import { setMuseum } from "$lib/stores/museum";
     import Toast from "$lib/util/toast.svelte";
     import type { Museum } from "$lib/db/museum";
 
@@ -17,12 +17,11 @@
         const lowerEmail = email.toLowerCase();
         const authData = await pbLogin(lowerEmail, password);
         // Fetch museum data for the logged-in user
-        const museumData = await getUserMuseums(authData?.record?.id);
+        const museumData = await getUserMuseum(authData?.record?.id);
         if (!museumData) {
             throw new Error('No museum associated with this user');
         }
-        // Store the museum data
-        museumStore.set(museumData as Museum);
+        setMuseum(museumData as Museum);
         
         toast.callToast('Logged in successfully!', 'success');
         // wait 1 seconds
