@@ -17,44 +17,29 @@ let stagingLayerView: __esri.FeatureLayerView;
 let highlightIds: number[] = [];
 let highlightFeatures: __esri.Handle[] = [];
 let jurisdictionGeometry: __esri.Polygon;
-let Map: typeof __esri.Map, MapView: typeof __esri.MapView,
-  Expand: typeof __esri.Expand, Search: typeof __esri.widgetsSearch, SearchSource: typeof __esri.SearchSource,
-  FeatureLayer: any, GraphicsLayer: any, Sketch: any, Graphic: typeof __esri.Graphic, Geometry: typeof __esri.Geometry,
-  IdentityManager: any, Point: typeof __esri.Point, FeaturTable: typeof __esri.FeatureTable, SketchViewModel: typeof __esri.SketchViewModel,
-  geometryEngineAsync: typeof __esri.geometryEngineAsync, FeatureFilter: typeof __esri.FeatureFilter, FeatureEffect: typeof __esri.FeatureEffect,
-  FeatureLayerView: typeof __esri.FeatureLayerView, jsonUtils: typeof __esri.jsonUtils, Polygon: typeof __esri.Polygon, 
-  SimpleFillSymbol: typeof __esri.SimpleFillSymbol, Attachments: typeof __esri.Attachments;
+let Map: typeof __esri.Map, MapView: typeof __esri.MapView, FeatureLayer: any, GraphicsLayer: any,  IdentityManager: any, FeaturTable: typeof __esri.FeatureTable, 
+  SketchViewModel: typeof __esri.SketchViewModel, geometryEngineAsync: typeof __esri.geometryEngineAsync, FeatureFilter: typeof __esri.FeatureFilter, Polygon: typeof __esri.Polygon;
 
 async function loadArcGISModules() {
   Map = (await import('@arcgis/core/Map')).default;
   MapView = (await import('@arcgis/core/views/MapView')).default;
-  Expand = (await import('@arcgis/core/widgets/Expand')).default;
-  Search = (await import('@arcgis/core/widgets/Search')).default;
-  SearchSource = (await import('@arcgis/core/widgets/Search/SearchSource')).default;
   FeatureLayer = (await import('@arcgis/core/layers/FeatureLayer')).default;
   GraphicsLayer = (await import('@arcgis/core/layers/GraphicsLayer')).default;
-  Sketch = (await import('@arcgis/core/widgets/Sketch')).default;
-  Graphic = (await import('@arcgis/core/Graphic')).default;
-  Geometry = (await import('@arcgis/core/geometry/Geometry')).default;
   IdentityManager = (await import('@arcgis/core/identity/IdentityManager')).default;
-  Point = (await import('@arcgis/core/geometry/Point')).default;
   FeaturTable = (await import('@arcgis/core/widgets/FeatureTable')).default;
   SketchViewModel = (await import('@arcgis/core/widgets/Sketch/SketchViewModel')).default;
   geometryEngineAsync = (await import('@arcgis/core/geometry/geometryEngineAsync'));
   FeatureFilter = (await import('@arcgis/core/layers/support/FeatureFilter.js')).default;
-  FeatureEffect = (await import('@arcgis/core/layers/support/FeatureEffect.js')).default;
-  FeatureLayerView = (await import('@arcgis/core/views/layers/FeatureLayerView')).default;
-  jsonUtils = (await import('@arcgis/core/geometry/support/jsonUtils.js'));
   Polygon = (await import('@arcgis/core/geometry/Polygon')).default;
-  SimpleFillSymbol = (await import('@arcgis/core/symbols/SimpleFillSymbol')).default;
 }
 
 export async function init(container: HTMLDivElement, tableContainer: HTMLDivElement) {
-  await loadArcGISModules(); ``
+  await loadArcGISModules();
 
+  // Get token using client credentials
   const token = await generateCreds();
   const server = "https://www.arcgis.com/sharing/rest/";
-  IdentityManager.registerToken({ server, token })
+  IdentityManager.registerToken({ server, token });
 
   if (app.view) {
     app.view.destroy()
