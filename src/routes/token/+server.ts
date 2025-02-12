@@ -1,4 +1,3 @@
-
 import { ESRI_CLIENT_ID, ESRI_CLIENT_SECRET } from '$env/static/private';
 import { json } from '@sveltejs/kit';
 
@@ -7,7 +6,7 @@ export async function GET() {
         'Content-Type': 'application/json'
     };
     const searchParams = new URLSearchParams({
-        client_id: ESRI_CLIENT_ID,
+        client_id: ESRI_CLIENT_ID, // move this to secret
         client_secret: ESRI_CLIENT_SECRET,
         grant_type: "client_credentials"
     });

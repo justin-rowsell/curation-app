@@ -4,6 +4,9 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { currentUser } from '$lib/db/pocketbase';
+	import config from '@arcgis/core/config';
+
+	config.apiKey = import.meta.env.ESRI_API_KEY;
 
 	// we want to redirect to the root unless the user is looking for the welcome page or home page
 	if (browser) {

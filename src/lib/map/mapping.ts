@@ -13,11 +13,11 @@ let unsubscribers: Unsubscriber[] = [];
 let features: any[] = [];
 let stagingLayer: __esri.FeatureLayer;
 let featureTable: __esri.FeatureTable;
-let stagingLayerView: __esri.FeatureLayerView;  
+let stagingLayerView: __esri.FeatureLayerView;
 let highlightIds: number[] = [];
 let highlightFeatures: __esri.Handle[] = [];
 let jurisdictionGeometry: __esri.Polygon;
-let Map: typeof __esri.Map, MapView: typeof __esri.MapView, FeatureLayer: any, GraphicsLayer: any,  IdentityManager: any, FeaturTable: typeof __esri.FeatureTable, 
+let Map: typeof __esri.Map, MapView: typeof __esri.MapView, FeatureLayer: any, GraphicsLayer: any, IdentityManager: any, FeaturTable: typeof __esri.FeatureTable,
   SketchViewModel: typeof __esri.SketchViewModel, geometryEngineAsync: typeof __esri.geometryEngineAsync, FeatureFilter: typeof __esri.FeatureFilter, Polygon: typeof __esri.Polygon;
 
 async function loadArcGISModules() {
@@ -39,7 +39,8 @@ export async function init(container: HTMLDivElement, tableContainer: HTMLDivEle
   // Get token using client credentials
   const token = await generateCreds();
   const server = "https://www.arcgis.com/sharing/rest/";
-  IdentityManager.registerToken({ server, token });
+  console.log("token", token);
+  IdentityManager.registerToken({ server, token })
 
   if (app.view) {
     app.view.destroy()
@@ -296,7 +297,7 @@ async function getAttachmentsContent(feature: any) {
   console.log("getAttachmentsContent called with feature:", feature);
   const objectId = feature.graphic.attributes.objectid;
   console.log("ObjectID:", objectId);
-  
+
   // Query attachments for this feature
   console.log("Querying attachments...");
   const attachmentQuery = await stagingLayer.queryAttachments({
@@ -306,7 +307,7 @@ async function getAttachmentsContent(feature: any) {
 
   // Create content element
   const contentDiv = document.createElement("div");
-  
+
   // Add feature attributes section
   console.log("Creating attributes section");
   const attributesDiv = document.createElement("div");
@@ -323,11 +324,11 @@ async function getAttachmentsContent(feature: any) {
   // Add attachments section
   console.log("Creating attachments section");
   const attachmentsDiv = document.createElement("div");
-  
+
   if (attachmentQuery[objectId] && attachmentQuery[objectId].length > 0) {
     const attachments = attachmentQuery[objectId];
     console.log("Found attachments:", attachments);
-    
+
     attachments.forEach((attachment: any) => {
       console.log("Processing attachment:", attachment);
       if (attachment.contentType.startsWith('image/')) {
@@ -351,9 +352,9 @@ async function getAttachmentsContent(feature: any) {
     console.log("No attachments found");
     attachmentsDiv.textContent = "No attachments available";
   }
-  
+
   contentDiv.appendChild(attachmentsDiv);
-  
+
   console.log("Returning content div");
   return contentDiv;
 }
