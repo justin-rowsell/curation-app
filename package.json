@@ -36,6 +36,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@arcgis/core": "^4.27.6"
+		"@arcgis/core": "^4.27.6",
+		"pocketbase": "^0.25.1"
 	}
 }

@@ -1,4 +1,5 @@
 import { PUBLIC_STAGING_URL } from '$env/static/public';
+import { getMuseum } from '$lib/stores/museum';
 import type { Unsubscriber } from 'svelte/store';
 
 interface MapApp {
@@ -11,14 +12,18 @@ const app: MapApp = {}
 let unsubscribers: Unsubscriber[] = [];
 let features: any[] = [];
 let stagingLayer: __esri.FeatureLayer;
-let prodLayer: __esri.FeatureLayer;
 let featureTable: __esri.FeatureTable;
-
+let stagingLayerView: __esri.FeatureLayerView;  
+let highlightIds: number[] = [];
+let highlightFeatures: __esri.Handle[] = [];
+let jurisdictionGeometry: __esri.Polygon;
 let Map: typeof __esri.Map, MapView: typeof __esri.MapView,
   Expand: typeof __esri.Expand, Search: typeof __esri.widgetsSearch, SearchSource: typeof __esri.SearchSource,
   FeatureLayer: any, GraphicsLayer: any, Sketch: any, Graphic: typeof __esri.Graphic, Geometry: typeof __esri.Geometry,
   IdentityManager: any, Point: typeof __esri.Point, FeaturTable: typeof __esri.FeatureTable, SketchViewModel: typeof __esri.SketchViewModel,
-  geometryEngineAsync: typeof __esri.geometryEngineAsync, FeatureFilter: typeof __esri.FeatureFilter, FeatureEffect: typeof __esri.FeatureEffect;
+  geometryEngineAsync: typeof __esri.geometryEngineAsync, FeatureFilter: typeof __esri.FeatureFilter, FeatureEffect: typeof __esri.FeatureEffect,
+  FeatureLayerView: typeof __esri.FeatureLayerView, jsonUtils: typeof __esri.jsonUtils, Polygon: typeof __esri.Polygon, 
+  SimpleFillSymbol: typeof __esri.SimpleFillSymbol, Attachments: typeof __esri.Attachments;
 
 async function loadArcGISModules() {
   Map = (await import('@arcgis/core/Map')).default;
@@ -38,10 +43,14 @@ async function loadArcGISModules() {
   geometryEngineAsync = (await import('@arcgis/core/geometry/geometryEngineAsync'));
   FeatureFilter = (await import('@arcgis/core/layers/support/FeatureFilter.js')).default;
   FeatureEffect = (await import('@arcgis/core/layers/support/FeatureEffect.js')).default;
+  FeatureLayerView = (await import('@arcgis/core/views/layers/FeatureLayerView')).default;
+  jsonUtils = (await import('@arcgis/core/geometry/support/jsonUtils.js'));
+  Polygon = (await import('@arcgis/core/geometry/Polygon')).default;
+  SimpleFillSymbol = (await import('@arcgis/core/symbols/SimpleFillSymbol')).default;
 }
 
 export async function init(container: HTMLDivElement, tableContainer: HTMLDivElement) {
-  await loadArcGISModules();
+  await loadArcGISModules(); ``
 
   const token = await generateCreds();
   const server = "https://www.arcgis.com/sharing/rest/";
@@ -58,17 +67,16 @@ export async function init(container: HTMLDivElement, tableContainer: HTMLDivEle
   const polygonGraphicsLayer = new GraphicsLayer();
   map.add(polygonGraphicsLayer);
 
-
-  prodLayer = new FeatureLayer({
-    url: PUBLIC_STAGING_URL,
-    outFields: ["*"],
-    visible: false,
-  });
-  map.add(prodLayer);
   stagingLayer = new FeatureLayer({
     url: PUBLIC_STAGING_URL,
     outFields: ["*"],
     visible: true,
+    // Add popup template
+    popupTemplate: {
+      title: "Submission Details",
+      content: getAttachmentsContent,
+      outFields: ["*"]
+    }
   });
   map.add(stagingLayer);
 
@@ -108,11 +116,6 @@ export async function init(container: HTMLDivElement, tableContainer: HTMLDivEle
     event.added.forEach((item: any) => {
       features.push(item);
     });
-
-    stagingLayer.featureEffect = new FeatureEffect({
-      filter: new FeatureFilter({ objectIds: features }),
-      excludedEffect: "@arcgis/core/layers/support/FeatureEffect.js"
-    });
   });
 
   // create a new sketch view model set its layer
@@ -131,11 +134,12 @@ export async function init(container: HTMLDivElement, tableContainer: HTMLDivEle
       });
       const queryGeometry = await geometryEngineAsync.union(geometries.toArray());
       selectFeatures(queryGeometry);
+      // remove the graphics from the polygonGraphicsLayer
+      polygonGraphicsLayer.removeAll();
     }
   });
 
   view.when(async () => {
-    const element = document.createElement('div');
     // add the select by rectangle button the view
     view.ui.add("select-by-rectangle", "top-left");
     const selectButton = document.getElementById("select-by-rectangle");
@@ -152,9 +156,7 @@ export async function init(container: HTMLDivElement, tableContainer: HTMLDivEle
     const clearSelectionElement = document.getElementById("clear-selection");
     if (clearSelectionElement) {
       clearSelectionElement.addEventListener("click", () => {
-        featureTable.highlightIds.removeAll();
-        featureTable.filterGeometry.destroy;
-        polygonGraphicsLayer.removeAll();
+        clearSelection();
       });
     }
 
@@ -168,34 +170,69 @@ export async function init(container: HTMLDivElement, tableContainer: HTMLDivEle
             objectIds: features,
             outFields: ["*"]
           });
-          console.log("adding features to prod layer", selectedFeatures.features);
-          const edits = {
-            addFeatures: selectedFeatures.features.map((feature: __esri.Graphic) => {
-              return {
-                geometry: feature.geometry,
-                attributes: feature.attributes
-              };
-            })
-          };
-          await prodLayer.applyEdits(edits)
 
-      //     // TODO - uncommented until the layers are set up correctly
-      //     await stagingLayer.applyEdits({
-      //       deleteFeatures: selectedFeatures.features.map((feature: __esri.Graphic) => {
-      //         return {
-      //           objectId: feature.attributes.__OBJECTID
-      //         };
-      //       })
-      //     });
+          //     // TODO - uncommented until the layers are set up correctly
+          //     await stagingLayer.applyEdits({
+          //       deleteFeatures: selectedFeatures.features.map((feature: __esri.Graphic) => {
+          //         return {
+          //           objectId: feature.attributes.__OBJECTID
+          //         };
+          //       })
+          //     });
 
-      //     featureTable.highlightIds.removeAll();
-      //     features = [];
-      //     alert("Selected submissions have been promoted.");
+          //     featureTable.highlightIds.removeAll();
+          //     features = [];
+          //     alert("Selected submissions have been promoted.");
         }
       });
     }
   });
 
+  view.when(async () => {
+    // loop through webmap's operational layers
+    view.map.layers.forEach((layer, index) => {
+      view
+        .whenLayerView(layer)
+        .then(async (layerView) => {
+          if (layer.type === "feature") {
+            // Add jurisdiction filter if provided
+            const museum = await getMuseum();
+            console.log("jurisdiction", museum);
+            if (museum) {
+              console.log("museum.geojson.geometry.coordinates[0]", museum.geojson.geometry.coordinates[0]);
+              jurisdictionGeometry = new Polygon({
+                spatialReference: { wkid: 4326 },
+                rings: museum.geojson.geometry.coordinates[0]
+              });
+
+              // const graphic = new Graphic({
+              //   geometry: jurisdictionGeometry,
+              //   symbol: new SimpleFillSymbol({
+              //     color: [0, 0, 0, 0.1],
+              //     outline: {
+              //       color: [0, 0, 0, 0.5],
+              //       width: 1
+              //     }
+              //   })
+              // });
+              // polygonGraphicsLayer.add(graphic);
+
+              console.log("jurisdictionGeometry", jurisdictionGeometry);
+              const filter = new FeatureFilter({
+                geometry: jurisdictionGeometry,
+                spatialRelationship: "intersects"
+              });
+              console.log("filter", filter);
+
+              (layerView as __esri.FeatureLayerView).filter = filter;
+              featureTable.filterGeometry = jurisdictionGeometry.extent;
+              stagingLayerView = layerView as __esri.FeatureLayerView;
+            }
+          }
+        })
+        .catch(console.error);
+    });
+  });
 
   app.view = view
   return cleanup;
@@ -206,6 +243,17 @@ function cleanup() {
   for (let u of unsubscribers) {
     u();
   }
+}
+
+function clearSelection() {
+  console.log("clearing selection");
+  featureTable.highlightIds.removeAll();
+  for (let highlight of highlightFeatures) {
+    highlight.remove();
+  }
+
+  // then we want to reset the feature table's filter to the original filter for museum jurisdiction
+  featureTable.filterGeometry = jurisdictionGeometry.extent;
 }
 
 
@@ -233,10 +281,8 @@ function selectFeatures(geometry: __esri.Geometry) {
       .queryFeatures(query)
       .then((results) => {
         if (results.features.length === 0) {
-          // clearSelection()
+          clearSelection()
         } else {
-          featureTable.highlightIds.removeAll();
-          let highlightIds: number[] = [];
           // filter the table based on the selection and only show those rows
           featureTable.filterGeometry = geometry;
           // Iterate through the features and push each individual result's OBJECTID to the highlightIds array
@@ -245,6 +291,12 @@ function selectFeatures(geometry: __esri.Geometry) {
           });
           // Set the highlightIds array to the highlightIds property of the featureTable
           featureTable.highlightIds.addMany(highlightIds);
+
+          // highlight the features
+          for (let result of results.features) {
+            let highlight = stagingLayerView.highlight(result);
+            highlightFeatures.push(highlight);
+          }
         }
       })
       .catch(errorCallback);
@@ -253,4 +305,70 @@ function selectFeatures(geometry: __esri.Geometry) {
 
 function errorCallback(error: any) {
   console.log("error happened:", error.message);
+}
+
+async function getAttachmentsContent(feature: any) {
+  console.log("getAttachmentsContent called with feature:", feature);
+  const objectId = feature.graphic.attributes.objectid;
+  console.log("ObjectID:", objectId);
+  
+  // Query attachments for this feature
+  console.log("Querying attachments...");
+  const attachmentQuery = await stagingLayer.queryAttachments({
+    objectIds: [objectId]
+  });
+  console.log("Attachment query results:", attachmentQuery);
+
+  // Create content element
+  const contentDiv = document.createElement("div");
+  
+  // Add feature attributes section
+  console.log("Creating attributes section");
+  const attributesDiv = document.createElement("div");
+  attributesDiv.style.marginBottom = "10px";
+  // Add any relevant attributes you want to display
+  attributesDiv.innerHTML = `
+    <p><strong>ID:</strong> ${feature.graphic.attributes.objectid}</p>
+    <p><strong>Description:</strong> ${feature.graphic.attributes.please_write_a_short_descriptio || 'N/A'}</p>
+    <p><strong>Category:</strong> ${feature.graphic.attributes.what_category_best_applies_to_y || 'N/A'}</p>
+    <p><strong>Photo Date:</strong> ${feature.graphic.attributes.when_was_your_photo_taken ? new Date(feature.graphic.attributes.when_was_your_photo_taken).toLocaleDateString() : 'N/A'}</p>
+  `;
+  contentDiv.appendChild(attributesDiv);
+
+  // Add attachments section
+  console.log("Creating attachments section");
+  const attachmentsDiv = document.createElement("div");
+  
+  if (attachmentQuery[objectId] && attachmentQuery[objectId].length > 0) {
+    const attachments = attachmentQuery[objectId];
+    console.log("Found attachments:", attachments);
+    
+    attachments.forEach((attachment: any) => {
+      console.log("Processing attachment:", attachment);
+      if (attachment.contentType.startsWith('image/')) {
+        console.log("Creating image element for:", attachment.url);
+        const img = document.createElement("img");
+        img.src = attachment.url;
+        img.style.maxWidth = "100%";
+        img.style.marginBottom = "10px";
+        attachmentsDiv.appendChild(img);
+      } else {
+        console.log("Creating link for:", attachment.name);
+        const link = document.createElement("a");
+        link.href = attachment.url;
+        link.target = "_blank";
+        link.textContent = attachment.name;
+        attachmentsDiv.appendChild(link);
+        attachmentsDiv.appendChild(document.createElement("br"));
+      }
+    });
+  } else {
+    console.log("No attachments found");
+    attachmentsDiv.textContent = "No attachments available";
+  }
+  
+  contentDiv.appendChild(attachmentsDiv);
+  
+  console.log("Returning content div");
+  return contentDiv;
 }
