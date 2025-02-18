@@ -34,11 +34,11 @@
 	>
 		<span class="esri-icon-erase"></span>
 	</div>
-    <div class="esri-widget esri-widget--button esri-widget esri-interactive" 
+    <!-- <div class="esri-widget esri-widget--button esri-widget esri-interactive" 
         id="promote-button" 
         title="Promote selected features">
         <span class="esri-icon-arrow-up"></span>
-    </div>
+    </div> -->
 	<div class="w-full h-2/5 flex">
 		<div bind:this={tableRef} id="tableDiv"></div>
 	</div>

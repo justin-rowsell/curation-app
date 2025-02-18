@@ -78,6 +78,7 @@ export async function pbSignUp(username: string, name: string, email: string, pa
 
 export function pbSignOut() {
     pb.authStore.clear();
+    currentUser.set(pb.authStore);
 }
 
 export function getFileUrl(fileId: string) {

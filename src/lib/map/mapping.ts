@@ -146,32 +146,32 @@ export async function init(container: HTMLDivElement, tableContainer: HTMLDivEle
       });
     }
 
-    view.ui.add("promote-button", "top-right")
-    const promoteButton = document.getElementById("promote-button");
-    if (promoteButton) {
-      promoteButton.addEventListener("click", async () => {
-        const confirmation = confirm("Are you sure you want to promote the selected submissions?");
-        if (confirmation) {
-          const selectedFeatures = await stagingLayer.queryFeatures({
-            objectIds: features,
-            outFields: ["*"]
-          });
+    // view.ui.add("promote-button", "top-right")
+    // const promoteButton = document.getElementById("promote-button");
+    // if (promoteButton) {
+    //   promoteButton.addEventListener("click", async () => {
+    //     const confirmation = confirm("Are you sure you want to promote the selected submissions?");
+    //     if (confirmation) {
+    //       const selectedFeatures = await stagingLayer.queryFeatures({
+    //         objectIds: features,
+    //         outFields: ["*"]
+    //       });
 
-          //     // TODO - uncommented until the layers are set up correctly
-          //     await stagingLayer.applyEdits({
-          //       deleteFeatures: selectedFeatures.features.map((feature: __esri.Graphic) => {
-          //         return {
-          //           objectId: feature.attributes.__OBJECTID
-          //         };
-          //       })
-          //     });
+    //       //     // TODO - uncommented until the layers are set up correctly
+    //       //     await stagingLayer.applyEdits({
+    //       //       deleteFeatures: selectedFeatures.features.map((feature: __esri.Graphic) => {
+    //       //         return {
+    //       //           objectId: feature.attributes.__OBJECTID
+    //       //         };
+    //       //       })
+    //       //     });
 
-          //     featureTable.highlightIds.removeAll();
-          //     features = [];
-          //     alert("Selected submissions have been promoted.");
-        }
-      });
-    }
+    //       //     featureTable.highlightIds.removeAll();
+    //       //     features = [];
+    //       //     alert("Selected submissions have been promoted.");
+    //     }
+    //   });
+    // }
   });
 
   view.when(async () => {
